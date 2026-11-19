@@ -5,7 +5,8 @@
 // Böylece kodu GitHub'da değiştirdiğinde telefondaki widget kendiliğinden güncellenir.
 // Bu dosyayı telefona BİR KEZ kopyalaman yeterli. Widget'ta bu script'i seç.
 //
-// Depo private ise: ilk çalıştırmada GitHub token'ı sorulur ve iPhone Anahtar Zinciri'nde (Keychain) saklanır.
+// Depo public ise token gerekmez. Depo private yapılırsa: script uygulamada çalışınca GitHub token'ı sorulur
+// ve iPhone Anahtar Zinciri'nde (Keychain) saklanır.
 // Token sadece bu depoya "Contents: Read-only" yetkili, fine-grained bir token olmalı.
 // Token geçersiz/süresi dolmuşsa script uygulamada çalışınca yeni token'ı kendisi sorar.
 
@@ -23,7 +24,7 @@ const uygulamada = !config.runsInWidget && !config.runsInAccessoryWidget;
 async function tokenSor() {
   const a = new Alert();
   a.title = "GitHub token";
-  a.message = "Depo private olduğu için bir kez GitHub token'ı gerekli (sadece bu depo, Contents: Read-only). Telefonda Anahtar Zinciri'nde saklanır.";
+  a.message = "Depo okunamadı (private olabilir). GitHub token'ı gerekli (sadece bu depo, Contents: Read-only). Telefonda Anahtar Zinciri'nde saklanır.";
   a.addSecureTextField("github_pat_...", "");
   a.addAction("Kaydet");
   a.addCancelAction("Vazgeç");
@@ -37,25 +38,28 @@ function token() {
   return Keychain.contains(TOKEN_ANAHTAR) ? Keychain.get(TOKEN_ANAHTAR) : null;
 }
 
-async function guncelle(tekrar = true) {
-  let t = token();
-  if (!t && uygulamada) t = await tokenSor();
-  if (!t) throw new Error("GitHub token yok. Script'i Scriptable uygulamasında bir kez çalıştır.");
-  const r = new Request(`https://api.github.com/repos/${DEPO}/contents/${DOSYA}?ref=${DAL}`);
-  r.headers = {
-    Authorization: "Bearer " + t,
-    Accept: "application/vnd.github.raw",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
+async function indir(t) {
+  // token yoksa raw.githubusercontent (public depo, istek sınırı yok); varsa GitHub API (private depo)
+  const r = new Request(t
+    ? `https://api.github.com/repos/${DEPO}/contents/${DOSYA}?ref=${DAL}`
+    : `https://raw.githubusercontent.com/${DEPO}/${DAL}/${DOSYA}?t=${Date.now()}`);
+  if (t) r.headers = { Authorization: "Bearer " + t, Accept: "application/vnd.github.raw", "X-GitHub-Api-Version": "2022-11-28" };
   r.timeoutInterval = 10;
   const kod = await r.loadString();
-  const kodu = r.response.statusCode;
-  if ((kodu === 401 || kodu === 404) && uygulamada && tekrar) {
-    Keychain.remove(TOKEN_ANAHTAR);
-    if (await tokenSor()) return guncelle(false);
+  return { kodu: r.response.statusCode, kod };
+}
+
+async function guncelle() {
+  let t = token();
+  let { kodu, kod } = await indir(t);
+  // public depoda token'sız çalışır; 401/404 gelirse (private depo ya da bozuk token) token sor
+  if ((kodu === 401 || kodu === 404) && uygulamada) {
+    if (t) Keychain.remove(TOKEN_ANAHTAR);
+    t = await tokenSor();
+    if (t) ({ kodu, kod } = await indir(t));
   }
   if (kodu === 401 || kodu === 404) {
-    throw new Error(`GitHub ${kodu}: token geçersiz, süresi dolmuş ya da bu depoya yetkisi yok.`);
+    throw new Error(`GitHub ${kodu}: depo private ve token yok/geçersiz. Script'i Scriptable uygulamasında çalıştır.`);
   }
   if (kodu !== 200 || !kod.includes("Pudifin")) throw new Error("Kod alınamadı: " + kodu);
   fm.writeString(yol, kod);

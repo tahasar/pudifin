@@ -28,9 +28,9 @@ Uygulama yazmak, Mac/Xcode veya Apple geliştirici hesabı gerekmez. Ücretsiz *
 
 - Asıl kod: [`scriptable/Altin.js`](scriptable/Altin.js). Telefondaki yükleyici bunu `main` dalından çeker.
 - Değişiklik `main`'e girince telefon en geç 6 saat içinde (ya da Scriptable'da script'i elle çalıştırınca hemen) yeni kodu alır.
-### Depo private: GitHub token
+### Depo private yapılırsa: GitHub token
 
-Yükleyici kodu GitHub API'den token ile çeker; depo private kalabilir.
+Depo public iken token gerekmez. Private yapılırsa yükleyici token ister:
 
 1. GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → *Generate new token*
    (doğrudan: https://github.com/settings/personal-access-tokens/new)
