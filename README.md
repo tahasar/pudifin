@@ -28,4 +28,15 @@ Uygulama yazmak, Mac/Xcode veya Apple geliştirici hesabı gerekmez. Ücretsiz *
 
 - Asıl kod: [`scriptable/Altin.js`](scriptable/Altin.js). Telefondaki yükleyici bunu `main` dalından çeker.
 - Değişiklik `main`'e girince telefon en geç 6 saat içinde (ya da Scriptable'da script'i elle çalıştırınca hemen) yeni kodu alır.
-- **Depo herkese açık (public) olmalı**, yoksa `raw.githubusercontent.com` adresi telefondan okunamaz. Gizli tutmak istersen yükleyiciyi kullanma; `Altin.js`'i doğrudan Scriptable'a yapıştır (otomatik güncelleme olmaz).
+### Depo private: GitHub token
+
+Yükleyici kodu GitHub API'den token ile çeker; depo private kalabilir.
+
+1. GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → *Generate new token*
+   (doğrudan: https://github.com/settings/personal-access-tokens/new)
+2. Repository access: **Only select repositories** → `tahasar/pudifin`
+3. Permissions → Repository permissions → **Contents: Read-only** (başka hiçbir şey verme)
+4. Bir son kullanma tarihi seç. Süresi dolunca widget eski kodla çalışmaya devam eder; Scriptable'da script'i açınca yeni token sorulur.
+5. Token'ı kopyala, iPhone'da Scriptable'da `Altın`'ı ▶ ile çalıştır, sorulan kutuya yapıştır. Token iPhone Anahtar Zinciri'nde saklanır, depoya veya koda yazılmaz.
+
+Token'ı kimseyle paylaşma, sohbetlere yapıştırma. Sızarsa GitHub'dan silip yenisini oluştur.
